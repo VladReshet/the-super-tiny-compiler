@@ -69,6 +69,25 @@
  *      CCC::::::::::::C   OO:::::::::OO   M::::::M               M::::::MP::::::::P          I::::::::IL::::::::::::::::::::::LE::::::::::::::::::::ER::::::R     R:::::R
  *         CCCCCCCCCCCCC     OOOOOOOOO     MMMMMMMM               MMMMMMMMPPPPPPPPPP          IIIIIIIIIILLLLLLLLLLLLLLLLLLLLLLLLEEEEEEEEEEEEEEEEEEEEEERRRRRRRR     RRRRRRR
  *
+ *
+ *                              RRRRRRRRRRRRRRRRR   UUUUUUU     UUUUUUU   SSSSSSSSSSSSSSS   
+ *                              R::::::::::::::::R  ::::::U     U:::::: SS:::::::::::::::S   
+ *                              R::::::RRRRRR:::::R ::::::U     U::::::S:::::SSSSSS::::::S    
+ *                              RR:::::R     R:::::RU:::::U     U:::::US:::::S     SSSSSSS
+ *                                R::::R     R:::::RU:::::U     U:::::US:::::S            
+ *     H::::::HHHHH::::::H        R::::R     R:::::RU:::::U     U:::::US:::::S               H::::::HHHHH::::::H
+ *     H:::::::::::::::::H        R::::RRRRRR:::::R U:::::U     U:::::U S::::SSSS            H:::::::::::::::::H    
+ *     H:::::::::::::::::H        R:::::::::::::RR  U:::::U     U:::::U  SS::::::SSSSS       H:::::::::::::::::H    
+ *     H::::::HHHHH::::::H        R::::RRRRRR:::::R U:::::U     U:::::U    SSS::::::::SS     H::::::HHHHH::::::H  
+ *                                R::::R     R:::::RU:::::U     U:::::U       SSSSSS::::S 
+ *                                R::::R     R:::::RU:::::U     U:::::U            S:::::S
+ *                                R::::R     R:::::RU::::::U   U::::::U            S:::::S
+ *                              RR:::::R     R:::::RU:::::::UUU:::::::USSSSSSS     S:::::S
+ *                              R::::::R     R:::::R UU:::::::::::::UU S::::::SSSSSS:::::S
+ *                              R::::::R     R:::::R   UU:::::::::UU   S:::::::::::::::SS 
+ *                              RRRRRRRR     RRRRRRR     UUUUUUUUU      SSSSSSSSSSSSSSS   
+ *
+ *
  * =======================================================================================================================================================================
  * =======================================================================================================================================================================
  * =======================================================================================================================================================================
@@ -76,16 +95,20 @@
  */
 
 /**
- * Today we're going to write a compiler together. But not just any compiler... A
- * super duper teeny tiny compiler! A compiler that is so small that if you
- * remove all the comments this file would only be ~200 lines of actual code.
+ * Примечание переводчика: я умышленно не стал переводить слово node как "узел", 
+ * поэтому везде по тексту оно встречается как нода (ноду, ноды, и т.д.). 
+ */
+
+/**
+ * Сегодня мы вместе с вами напишем компилятор. Но не просто компилятор... А
+ * супер-пупер крошечный компилятор! Такой маленький компилятор, что если убрать
+ * все комментарии, то в этом файле отанется всего-лишь около 200 строк кода.
  *
- * We're going to compile some lisp-like function calls into some C-like
- * function calls.
+ * Мы скомпилируем вызовы LISP-подобных функций в вызовы C-подобных функций
+ * 
+ * Возможно вы не знакомы с первыми или со вторыми. Поэтому вот быстрые основы:
  *
- * If you are not familiar with one or the other. I'll just give you a quick intro.
- *
- * If we had two functions `add` and `subtract` they would be written like this:
+ * Если есть две функции `add` и `subtract`, их вызовы будут записаны примерно так:
  *
  *                  LISP                      C
  *
@@ -93,55 +116,51 @@
  *   4 - 2          (subtract 4 2)            subtract(4, 2)
  *   2 + (4 - 2)    (add 2 (subtract 4 2))    add(2, subtract(4, 2))
  *
- * Easy peezy right?
+ * Очень легко, не так ли?
  *
- * Well good, because this is exactly what we are going to compile. While this
- * is neither a complete LISP or C syntax, it will be enough of the syntax to
- * demonstrate many of the major pieces of a modern compiler.
+ * И это хорошо, потому что это именно то что мы с вами собираемся компилировать.
+ * И хотя это всё ещё не полноценный LISP или C синтаксис, этого достаточно 
+ * для демонстрации множества основных тонкостей современных компиляторов.
  */
 
 /**
- * Most compilers break down into three primary stages: Parsing, Transformation,
- * and Code Generation
+ * Работу большинства компиляторов можно разбить на 3 части: Парсинг, Трансформация, 
+ * и Кодогенерация (генерация кода)
+ * 
+ * 1. *Парсинг* берёт сырой код и создаёт его более абстрактное представление
  *
- * 1. *Parsing* is taking raw code and turning it into a more abstract
- *    representation of the code.
- *
- * 2. *Transformation* takes this abstract representation and manipulates to do
- *    whatever the compiler wants it to.
- *
- * 3. *Code Generation* takes the transformed representation of the code and
- *    turns it into new code.
+ * 2. *Трансформация* берёт это абстрактное представление, и делает с ним всё что
+ *     требует компилятор
+ * 
+ * 3. *Кодогенерация* берёт трансформированое представление кода, и на его основе
+ *    генерирует новый код
  */
 
 /**
- * Parsing
+ * Парсинг
  * -------
  *
- * Parsing typically gets broken down into two phases: Lexical Analysis and
- * Syntactic Analysis.
+ * В целом, парсинг делится на два этапы: Лексический анализ и Синтаксический анализ
  *
- * 1. *Lexical Analysis* takes the raw code and splits it apart into these things
- *    called tokens by a thing called a tokenizer (or lexer).
+ * 1. *Лексический анализ* берёт "сырой" код и разбивает его на части (токены) с помощью
+ *    токенизера (или лексера).
  *
- *    Tokens are an array of tiny little objects that describe an isolated piece
- *    of the syntax. They could be numbers, labels, punctuation, operators,
- *    whatever.
+ *    Токены это массив маленьких объектов, которые описывают изолированый кусок кода.
+ *    Это могут быть цифры, пунктуация, метки, операторы, всё что угодно.
  *
- * 2. *Syntactic Analysis* takes the tokens and reformats them into a
- *    representation that describes each part of the syntax and their relation
- *    to one another. This is known as an intermediate representation or
- *    Abstract Syntax Tree.
+ * 2. *Синтаксический анализ* берёт токены и строит представление которое описывает
+ *     все части синтаксиса, и их связи между собой. Это называется промежуточным
+ *     представлением или AST (Abstract Syntax Tree, абстрактное синтаксическое дерево).
  *
- *    An Abstract Syntax Tree, or AST for short, is a deeply nested object that
- *    represents code in a way that is both easy to work with and tells us a lot
- *    of information.
+ *    Если кратно, то Abstract Syntax Tree (AST) - это глубоко вложенные объекты
+ *    представленные таким образом чтобы с ними было легко работать, и при этом предоставляющие
+ *    много информации.
  *
- * For the following syntax:
+ * Так, для следующего синтаксиса:
  *
  *   (add 2 (subtract 4 2))
  *
- * Tokens might look something like this:
+ * Токены могут выглядеть, например, вот так:
  *
  *   [
  *     { type: 'paren',  value: '('        },
@@ -155,7 +174,7 @@
  *     { type: 'paren',  value: ')'        },
  *   ]
  *
- * And an Abstract Syntax Tree (AST) might look like this:
+ * А абстрактное синтаксическое дерево (AST) вот так:
  *
  *   {
  *     type: 'Program',
@@ -181,50 +200,48 @@
  */
 
 /**
- * Transformation
+ * Трансформация
  * --------------
  *
- * The next type of stage for a compiler is transformation. Again, this just
- * takes the AST from the last step and makes changes to it. It can manipulate
- * the AST in the same language or it can translate it into an entirely new
- * language.
+ * Следующей стадией компилирования является трансформация. Здесь берётся AST
+ * с прошлого шага, и потом изменяется. Трансформация может
+ * изменять его в рамках того же языка, или же транслировать его в другой.
  *
- * Let’s look at how we would transform an AST.
+ * Давайте посмотрим как мы будем трансформировать AST.
  *
- * You might notice that our AST has elements within it that look very similar.
- * There are these objects with a type property. Each of these are known as an
- * AST Node. These nodes have defined properties on them that describe one
- * isolated part of the tree.
+ * Вы могли заметить что наш AST имеет много очень похожих элементов. Это объекты
+ * со свойством "тип". Они называются AST Node (AST нодами, или узлами).
+ * Эти ноды содержат определённые свойства которые описывают одно, определённое место 
+ * в синтаксическом дереве
  *
- * We can have a node for a "NumberLiteral":
+ * Например, у нас может быть нода для "NumberLiteral" (числовое значение):
  *
  *   {
  *     type: 'NumberLiteral',
  *     value: '2',
  *   }
  *
- * Or maybe a node for a "CallExpression":
+ * Или же нода для "CallExpression" (выражение вызова):
  *
  *   {
  *     type: 'CallExpression',
  *     name: 'subtract',
- *     params: [...nested nodes go here...],
+ *     params: [...тут ещё вложенные ноды...],
  *   }
  *
- * When transforming the AST we can manipulate nodes by
- * adding/removing/replacing properties, we can add new nodes, remove nodes, or
- * we could leave the existing AST alone and create an entirely new one based
- * on it.
+ * Во время трансформирования AST мы можем манипулировать нодами изменяя,
+ * добавляя или заменяя свойства. Мы можем добавлять новые ноды, удалять их,
+ * или же можем оставить существующее AST, и построить полностью новое дерево, основываясь
+ * на предыдущем.
  *
- * Since we’re targeting a new language, we’re going to focus on creating an
- * entirely new AST that is specific to the target language.
+ * Так как нас интересует новый язык, мы сфокусируемся на создании нового AST,
+ * которое будет базироваться на синтаксисе интересующего нас языка.
  *
- * Traversal
+ * Обход дерева
  * ---------
  *
- * In order to navigate through all of these nodes, we need to be able to
- * traverse through them. This traversal process goes to each node in the AST
- * depth-first.
+ * Чтобы перемещаться по нодам, нам понадобиться обойти синтаксическое дерево. 
+ * Это процесс прохода вглубь
  *
  *   {
  *     type: 'Program',
@@ -248,46 +265,45 @@
  *     }]
  *   }
  *
- * So for the above AST we would go:
+ * Так, для AST представленого выше, мы будем:
  *
- *   1. Program - Starting at the top level of the AST
- *   2. CallExpression (add) - Moving to the first element of the Program's body
- *   3. NumberLiteral (2) - Moving to the first element of CallExpression's params
- *   4. CallExpression (subtract) - Moving to the second element of CallExpression's params
- *   5. NumberLiteral (4) - Moving to the first element of CallExpression's params
- *   6. NumberLiteral (2) - Moving to the second element of CallExpression's params
+ *   1. Program - Расположен на высшем уровне дерева
+ *   2. CallExpression (add) - Двигаемся к первому элементу тела Program
+ *   3. NumberLiteral (2) - Двигаемся к первому элементу параметров CallExpression
+ *   4. CallExpression (subtract) - Двигаемся ко второму элементу параметров CallExpression
+ *   5. NumberLiteral (4) - Двигаемся к первому элементу параметров CallExpression
+ *   6. NumberLiteral (2) - Двигаемся ко второму элементу параметров CallExpression
  *
- * If we were manipulating this AST directly, instead of creating a separate AST,
- * we would likely introduce all sorts of abstractions here. But just visiting
- * each node in the tree is enough for what we're trying to do.
+ * Если бы мы манипулировали деревом напрямую, вместо того чтобы создавать отдельное,
+ * вероятно мы бы сохраняли все виды абстракций прям тут. Но для того что мы пытаемся
+ * сделать достаточно простого посещения каждой ноды.
+ * 
+ * Я использовал слово "посещение" потому что есть патерн для представления операций
+ * с елементами структуры объекта. Паттерн "посетитель".
  *
- * The reason I use the word "visiting" is because there is this pattern of how
- * to represent operations on elements of an object structure.
- *
- * Visitors
+ * Посетители (Visitors)
  * --------
  *
- * The basic idea here is that we are going to create a “visitor” object that
- * has methods that will accept different node types.
+ * Основная идея заключается в создании объекта “посетитель” (visitor) который 
+ * будет иметь методы принимающие разные виды нод
  *
  *   var visitor = {
- *     NumberLiteral() {},
- *     CallExpression() {},
+ *     NumberLiteral() {}, // метод для цифрового литерала
+ *     CallExpression() {}, // метод для узла выражения вызова
  *   };
  *
- * When we traverse our AST, we will call the methods on this visitor whenever we
- * "enter" a node of a matching type.
+ * При обходе нашего дерева мы будем вызывать методы этого посетителя,
+ * выбирая метод соответствующий типу ноды
  *
- * In order to make this useful we will also pass the node and a reference to
- * the parent node.
+ * Чтобы было полезнее, мы будем передавать и саму ноду, и её родителя
  *
  *   var visitor = {
  *     NumberLiteral(node, parent) {},
  *     CallExpression(node, parent) {},
  *   };
  *
- * However, there also exists the possibility of calling things on "exit". Imagine
- * our tree structure from before in list form:
+ * Тем не менее, существует возможность дойти до "выхода" из дерева. 
+ * Предположим, структура нашего дерева выглядит вот так:
  *
  *   - Program
  *     - CallExpression
@@ -296,9 +312,8 @@
  *         - NumberLiteral
  *         - NumberLiteral
  *
- * As we traverse down, we're going to reach branches with dead ends. As we
- * finish each branch of the tree we "exit" it. So going down the tree we
- * "enter" each node, and going back up we "exit".
+ * При обходе в глубину (и вниз) мы столкнёмся с ветками которые не имеют продолжения. 
+ * Как только мы находим конец ветки - мы покидаем её, и возвращаемся к месту входа в неё.
  *
  *   -> Program (enter)
  *     -> CallExpression (enter)
@@ -313,7 +328,7 @@
  *     <- CallExpression (exit)
  *   <- Program (exit)
  *
- * In order to support that, the final form of our visitor will look like this:
+ * С учётом всех этих нюансов, методы нашего "посетителя" будут выглядеть вот так:
  *
  *   var visitor = {
  *     NumberLiteral: {
@@ -324,102 +339,101 @@
  */
 
 /**
- * Code Generation
+ * Генерация кода
  * ---------------
  *
- * The final phase of a compiler is code generation. Sometimes compilers will do
- * things that overlap with transformation, but for the most part code
- * generation just means take our AST and string-ify code back out.
+ * Финальная фаза компилятора это кодогенерация. Иногда 
+ * компиляторы могут делать то, что, по-факту, пересекается с трансформацией,
+ * но в основном кодогенерация означает просто взятие AST, 
+ * и превращение его нод в строки.
  *
- * Code generators work several different ways, some compilers will reuse the
- * tokens from earlier, others will have created a separate representation of
- * the code so that they can print node linearly, but from what I can tell most
- * will use the same AST we just created, which is what we’re going to focus on.
+ * Генераторы кода работают разными способами. Некоторые компиляторы переиспользуют
+ * токены из прерыдущих этапов, другие создают отдельное представление кода,
+ * строя его таким образом чтобы переводить ноды в строки последовательно.
+ * Но в целом я хочу сказать что большинство компиляторов используют AST
+ * вроде того что мы только что создали, и на котором собираемся сфокусироваться.
  *
- * Effectively our code generator will know how to “print” all of the different
- * node types of the AST, and it will recursively call itself to print nested
- * nodes until everything is printed into one long string of code.
+ * Фактически наш генератор кода будет знать как "напечатать" все типы нод, и будет
+ * рекурсивно обходить, вызывать их и печатать, пока на выходе не получатся
+ * только строки кода.
  */
 
 /**
- * And that's it! That's all the different pieces of a compiler.
+ * В общем то, это и всё! Это все части компилятора.
  *
- * Now that isn’t to say every compiler looks exactly like I described here.
- * Compilers serve many different purposes, and they might need more steps than
- * I have detailed.
+ * Следует понимать что не все компиляторы выглядят так как я тут описал.
+ * Компиляторы имеют множество предназначений, и вполне могут требовать больше шагов
+ * чем тут описано.
  *
- * But now you should have a general high-level idea of what most compilers look
- * like.
+ * Но теперь вы знаете высокоуровневую суть работы большинства компиляторов.
  *
- * Now that I’ve explained all of this, you’re all good to go write your own
- * compilers right?
+ * После того как я рассказал обо всём этом, вы готовы написать свой собственный компилятор,
+ * не так ли?
  *
- * Just kidding, that's what I'm here to help with :P
+ * Да шучу я, это же именно то с чем я хочу вам тут помочь :P
  *
- * So let's begin...
+ * Итак, начнём...
  */
 
 /**
  * ============================================================================
  *                                   (/^▽^)/
- *                                THE TOKENIZER!
+ *                                  ТОКЕНИЗЕР!
  * ============================================================================
  */
 
 /**
- * We're gonna start off with our first phase of parsing, lexical analysis, with
- * the tokenizer.
+ * Мы начнём с первого этапа парсинга - лексического анализа и токенизера.
  *
- * We're just going to take our string of code and break it down into an array
- * of tokens.
+ * Нам надо просто брать строки кода и разбивать их на массивы токенов
  *
  *   (add 2 (subtract 4 2))   =>   [{ type: 'paren', value: '(' }, ...]
  */
 
-// We start by accepting an input string of code, and we're gonna set up two
-// things...
+// Начнём с того что будем принимать строку кода, и устанавливать две переменные:
 function tokenizer(input) {
 
-  // A `current` variable for tracking our position in the code like a cursor.
+  // Переменная с `текущим` значением для отслеживания нешего положения.
+  // Что-то вроде курсора для кода
   let current = 0;
 
-  // And a `tokens` array for pushing our tokens to.
+  // И массив токенов, чтобы их туда складывать.
   let tokens = [];
 
-  // We start by creating a `while` loop where we are setting up our `current`
-  // variable to be incremented as much as we want `inside` the loop.
+  // Начнём с создания `while` цикла, в котором мы будем инкрементить нашу 
+  // переменную `current`когда захочем.
   //
-  // We do this because we may want to increment `current` many times within a
-  // single loop because our tokens can be any length.
+  // Мы делаем так (вместо for(...)) потому что нам может понадобится инкремент этой перменной
+  // несколько раз за один прогон цикла, потому что наши токены могут иметь любую длину
   while (current < input.length) {
 
-    // We're also going to store the `current` character in the `input`.
+    // Так же мы будем хранить текущий символ в переменной `input`.
     let char = input[current];
 
-    // The first thing we want to check for is an open parenthesis. This will
-    // later be used for `CallExpression` but for now we only care about the
-    // character.
+    // Первое что мы хотим проверять - это открытая круглая (парная) скобка.
+    // В дальшейшем это будет использоваться для `CallExpression`, но сейчас
+    // мы заботимся просто о символе
     //
-    // We check to see if we have an open parenthesis:
+    // Проверяем если попали на открытую скобку:
     if (char === '(') {
 
-      // If we do, we push a new token with the type `paren` and set the value
-      // to an open parenthesis.
+      // Если да - создаём новый токен с типом `paren`, и ставим скобку
+      // в качестве значения
       tokens.push({
         type: 'paren',
         value: '(',
       });
 
-      // Then we increment `current`
+      // Инкрементим `current`
       current++;
 
-      // And we `continue` onto the next cycle of the loop.
+      // И начинаем наш цикл по-новому (переходим к следующему символу, новая итерация цикла)
       continue;
     }
 
-    // Next we're going to check for a closing parenthesis. We do the same exact
-    // thing as before: Check for a closing parenthesis, add a new token,
-    // increment `current`, and `continue`.
+    // Теперь мы хочем проверять закрывающую скобку. 
+    // Делаем то же самое что и прежде: проверяем на скобку, добавляем новый токен,
+    // инкрементим `current` и запускаем следующую итерацию цикла
     if (char === ')') {
       tokens.push({
         type: 'paren',
@@ -429,160 +443,157 @@ function tokenizer(input) {
       continue;
     }
 
-    // Moving on, we're now going to check for whitespace. This is interesting
-    // because we care that whitespace exists to separate characters, but it
-    // isn't actually important for us to store as a token. We would only throw
-    // it out later.
+    // Двигаясь дальше, нам надо находить пробелы. Это интересный момент, так как
+    // пробелы вроде как нужны для разделения символов, но для нас не особо важно
+    // хранить их как токены. Мы просто выкинем их позже
     //
-    // So here we're just going to test for existence and if it does exist we're
-    // going to just `continue` on.
+    // Так что мы просто проверяем существование, и если находим - сразу идём 
+    // к следующему символу (новая итерация цикла)
     let WHITESPACE = /\s/;
     if (WHITESPACE.test(char)) {
       current++;
       continue;
     }
 
-    // The next type of token is a number. This is different than what we have
-    // seen before because a number could be any number of characters and we
-    // want to capture the entire sequence of characters as one token.
+    // Следующий тип токена это число. Это отличается от того что мы видели раньше,
+    // потому что число может иметь разное количество символов, и мы хотим собирать
+    // всю последовательность в один токен
     //
     //   (add 123 456)
     //        ^^^ ^^^
-    //        Only two separate tokens
+    //        Это всего два токена
     //
-    // So we start this off when we encounter the first number in a sequence.
+    // Начнём когда столкнёмся с первым элементом последовательности (с цифрой)
     let NUMBERS = /[0-9]/;
     if (NUMBERS.test(char)) {
 
-      // We're going to create a `value` string that we are going to push
-      // characters to.
+      // Создадим переменную `value` в которую будем складывать символы
       let value = '';
 
-      // Then we're going to loop through each character in the sequence until
-      // we encounter a character that is not a number, pushing each character
-      // that is a number to our `value` and incrementing `current` as we go.
+      // Пойдём в цикле по всем следующим символам пока не столкнёмся
+      // с символом который не является цифрой. При проходе будем складывать каждый 
+      // символ (цифру) в `value`, и инкрементить `current`
       while (NUMBERS.test(char)) {
         value += char;
         char = input[++current];
       }
 
-      // After that we push our `number` token to the `tokens` array.
+      // После этого добавляем наш токен типа `number` в массив токенов
       tokens.push({ type: 'number', value });
 
-      // And we continue on.
+      // И продолжаем
       continue;
     }
 
-    // We'll also add support for strings in our language which will be any
-    // text surrounded by double quotes (").
+    // Так же мы добавим в наш язык поддержку строк, которые будут представлять
+    // собой любой текст окружённый двойными кавычками
     //
     //   (concat "foo" "bar")
-    //            ^^^   ^^^ string tokens
+    //            ^^^   ^^^ Строковые токены
     //
-    // We'll start by checking for the opening quote:
+    // Начнём с проверки на открывающую кавычку
     if (char === '"') {
-      // Keep a `value` variable for building up our string token.
+      // Создадим `value` для сборки нашего строчного токена
       let value = '';
 
-      // We'll skip the opening double quote in our token.
+      // Пропустим открывающую скобку
       char = input[++current];
 
-      // Then we'll iterate through each character until we reach another
-      // double quote.
+      // И теперь будем проходить по всем символам и добавлять их, пока не 
+      // дойдём до закрывающей скобки
       while (char !== '"') {
         value += char;
         char = input[++current];
       }
 
-      // Skip the closing double quote.
+      // Пропускаем её (закрывающую скобку)
       char = input[++current];
 
-      // And add our `string` token to the `tokens` array.
+      // И добавляем наш `string` токен в массив
       tokens.push({ type: 'string', value });
 
       continue;
     }
 
-    // The last type of token will be a `name` token. This is a sequence of
-    // letters instead of numbers, that are the names of functions in our lisp
-    // syntax.
+    // Последним типом токенов будет тип `name`. Это последовательность
+    // букв (вместо цифр как в числе), которые означают имена функций в нашем
+    // LISP синтаксисе
     //
     //   (add 2 4)
     //    ^^^
-    //    Name token
+    //    Токен типа `name`
     //
     let LETTERS = /[a-z]/i;
     if (LETTERS.test(char)) {
       let value = '';
 
-      // Again we're just going to loop through all the letters pushing them to
-      // a value.
+      // И снова - мы просто проходим по всем символам и добавляем их в 
+      // итоговое значение
       while (LETTERS.test(char)) {
         value += char;
         char = input[++current];
       }
 
-      // And pushing that value as a token with the type `name` and continuing.
+      // Потом добавляем типа `name` в массив, и продолжаем
       tokens.push({ type: 'name', value });
 
       continue;
     }
 
-    // Finally if we have not matched a character by now, we're going to throw
-    // an error and completely exit.
+    // В конце концов, если мы до этого момента не определили символ - 
+    // выбрасываем ошибку и выходим
     throw new TypeError('I dont know what this character is: ' + char);
   }
 
-  // Then at the end of our `tokenizer` we simply return the tokens array.
+  // Это конец нашего `токенизера` - просто возвращаем массив токенов.
   return tokens;
 }
 
 /**
  * ============================================================================
  *                                 ヽ/❀o ل͜ o\ﾉ
- *                                THE PARSER!!!
+ *                                   ПАРСЕР!!!
  * ============================================================================
  */
 
 /**
- * For our parser we're going to take our array of tokens and turn it into an
- * AST.
+ * В нашем парсере мы возьмём массив токенов и превратим его в абстрактное 
+ * синтаксическое дерево (AST)
  *
  *   [{ type: 'paren', value: '(' }, ...]   =>   { type: 'Program', body: [...] }
  */
 
-// Okay, so we define a `parser` function that accepts our array of `tokens`.
+// Итак, обьявим функцию `parser` которая будет принимать массив токенов
 function parser(tokens) {
 
-  // Again we keep a `current` variable that we will use as a cursor.
+  // И снова - используем переменную `current` в качестве курсора
   let current = 0;
 
-  // But this time we're going to use recursion instead of a `while` loop. So we
-  // define a `walk` function.
+  // Но в этот раз мы будем использовать рекурсию, вместо `while` цикла.
+  // Поэтому обьявляем функцию `walk`
   function walk() {
 
-    // Inside the walk function we start by grabbing the `current` token.
+    // Внутри функции начнём с того что достанем текущий токен
     let token = tokens[current];
 
-    // We're going to split each type of token off into a different code path,
-    // starting off with `number` tokens.
+    // Мы будем обрабатывать разные типы токенов разными способами
+    // Начнём с типа `number`
     //
-    // We test to see if we have a `number` token.
+    // Проверяем видим ли мы токен типа `number`
     if (token.type === 'number') {
 
-      // If we have one, we'll increment `current`.
+      // Если да - инкрементируем `current`
       current++;
 
-      // And we'll return a new AST node called `NumberLiteral` and setting its
-      // value to the value of our token.
+      // И возвращаем новую AST-ноду типа `NumberLiteral`, со значением которое
+      // возьмём из токена
       return {
         type: 'NumberLiteral',
         value: token.value,
       };
     }
 
-    // If we have a string we will do the same as number and create a
-    // `StringLiteral` node.
+    // Если у нас строка - делаем то же самое, только с `StringLiteral` нодой
     if (token.type === 'string') {
       current++;
 
@@ -592,44 +603,42 @@ function parser(tokens) {
       };
     }
 
-    // Next we're going to look for CallExpressions. We start this off when we
-    // encounter an open parenthesis.
+    // Дальше будем искать CallExpressions. Мы начнём работать над ними
+    // когда встретим открывающую скобку (токен типа `paren`)
     if (
       token.type === 'paren' &&
       token.value === '('
     ) {
 
-      // We'll increment `current` to skip the parenthesis since we don't care
-      // about it in our AST.
+      // Инкрементируем `current` чтобы пропустить скобку, потому что она 
+      // не интересует нас в нашем AST
       token = tokens[++current];
 
-      // We create a base node with the type `CallExpression`, and we're going
-      // to set the name as the current token's value since the next token after
-      // the open parenthesis is the name of the function.
+      // Создаём базовую ноду с типом `CallExpression`, и устанавливаем имя из
+      // текущей ноды, так как следующая нода после открывающей скобки - 
+      // это имя функции
       let node = {
         type: 'CallExpression',
         name: token.value,
         params: [],
       };
 
-      // We increment `current` *again* to skip the name token.
+      // И снова инкремент `current`, на этот раз чтобы пропустить имя
       token = tokens[++current];
 
-      // And now we want to loop through each token that will be the `params` of
-      // our `CallExpression` until we encounter a closing parenthesis.
+      // Теперь мы будем перебирать все токены (которые станут параметрами нашего `CallExpression`)
+      // пока не встретим закрывающую скобку.
       //
-      // Now this is where recursion comes in. Instead of trying to parse a
-      // potentially infinitely nested set of nodes we're going to rely on
-      // recursion to resolve things.
+      // Вот тут и появляется рекурсия. Вместо того чтобы пытаться парсить
+      // потенциально бесконечный набор нод, мы будем использовать рекурсию чтобы решить эту проблему.
       //
-      // To explain this, let's take our Lisp code. You can see that the
-      // parameters of the `add` are a number and a nested `CallExpression` that
-      // includes its own numbers.
+      // Возьмём код на "Lisp" чтобы это обьяснить. Вы можете видеть что параметры
+      // функции `add` это число, и вложенный вызов функции (`CallExpression`) который принимает
+      // свои числа
       //
       //   (add 2 (subtract 4 2))
       //
-      // You'll also notice that in our tokens array we have multiple closing
-      // parenthesis.
+      // Также вы можете заметить что в нашем масиве токенов есть несколько закрывающих скобок
       //
       //   [
       //     { type: 'paren',  value: '('        },
@@ -639,51 +648,47 @@ function parser(tokens) {
       //     { type: 'name',   value: 'subtract' },
       //     { type: 'number', value: '4'        },
       //     { type: 'number', value: '2'        },
-      //     { type: 'paren',  value: ')'        }, <<< Closing parenthesis
-      //     { type: 'paren',  value: ')'        }, <<< Closing parenthesis
+      //     { type: 'paren',  value: ')'        }, <<< Закрывающая скобка
+      //     { type: 'paren',  value: ')'        }, <<< Закрывающая скобка
       //   ]
       //
-      // We're going to rely on the nested `walk` function to increment our
-      // `current` variable past any nested `CallExpression`.
+      // Мы положимся на вложенную функцию `walk` для того чтобы увеличить
+      // `current` переменную после каждого вложенного `CallExpression`.
 
-      // So we create a `while` loop that will continue until it encounters a
-      // token with a `type` of `'paren'` and a `value` of a closing
-      // parenthesis.
+      // Мы создадим цикл `while` который будет прододжатся пока он встречает
+      // токены типа `paren` со значением (`value`) закрывающей скобки
       while (
         (token.type !== 'paren') ||
         (token.type === 'paren' && token.value !== ')')
       ) {
-        // we'll call the `walk` function which will return a `node` and we'll
-        // push it into our `node.params`.
+        // вызовем `walk` функцию которая вернёт ноду
+        // и положим её в `node.params`
         node.params.push(walk());
         token = tokens[current];
       }
 
-      // Finally we will increment `current` one last time to skip the closing
-      // parenthesis.
+      // И в конце-концов инкрементируем `current` в последний раз, чтобы
+      // пропустить закрывающую скобку.
       current++;
 
-      // And return the node.
+      // Возвращаем ноду.
       return node;
     }
 
-    // Again, if we haven't recognized the token type by now we're going to
-    // throw an error.
+    // И снова - если до этого момента не распознали тип токена - бросаем ошибку
     throw new TypeError(token.type);
   }
 
-  // Now, we're going to create our AST which will have a root which is a
-  // `Program` node.
+  // Теперь мы создадим наш AST с нодой `Program` в его корне (root)
   let ast = {
     type: 'Program',
     body: [],
   };
 
-  // And we're going to kickstart our `walk` function, pushing nodes to our
-  // `ast.body` array.
+  // и запускаем нашу `walk` function добавляя ноды в массив `ast.body`
   //
-  // The reason we are doing this inside a loop is because our program can have
-  // `CallExpression` after one another instead of being nested.
+  // Мы делаем это внутри цикла потому что наша програма может иметь `CallExpression`
+  // один после второго, вместо вложенности
   //
   //   (add 2 2)
   //   (subtract 4 2)
@@ -692,21 +697,21 @@ function parser(tokens) {
     ast.body.push(walk());
   }
 
-  // At the end of our parser we'll return the AST.
+  // И в конце-концов наш парсер возвращает AST.
   return ast;
 }
 
 /**
  * ============================================================================
  *                                 ⌒(❀>◞౪◟<❀)⌒
- *                               THE TRAVERSER!!!
+ *                                ОБХОД ДЕРЕВА!!!
  * ============================================================================
  */
 
 /**
- * So now we have our AST, and we want to be able to visit different nodes with
- * a visitor. We need to be able to call the methods on the visitor whenever we
- * encounter a node with a matching type.
+ * Итак, теперь у нас есть AST, и мы хочем иметь возможность посещать разные ноды
+ * с помощью "посетителя". Нам нужно иметь возможность вызывать методы посетителя
+ * всякий раз когда мы встречаем ноду подходящего типа
  *
  *   traverse(ast, {
  *     Program: {
@@ -738,85 +743,83 @@ function parser(tokens) {
  *   });
  */
 
-// So we define a traverser function which accepts an AST and a
-// visitor. Inside we're going to define two functions...
+// Мы обьявим функцию `traverser` которая будет принимать AST и посетителя.
+// Внутри мы обьявим две функции...
 function traverser(ast, visitor) {
 
-  // A `traverseArray` function that will allow us to iterate over an array and
-  // call the next function that we will define: `traverseNode`.
+  // Функция `traverseArray` которая позволит нам проходить через весь массив и 
+  // вызывать следующую функцию которую мы сейчас обьявим - `traverseNode`
   function traverseArray(array, parent) {
     array.forEach(child => {
       traverseNode(child, parent);
     });
   }
 
-  // `traverseNode` will accept a `node` and its `parent` node. So that it can
-  // pass both to our visitor methods.
+  // `traverseNode` будет принимать ноду и её родителя. 
+  // она сможет передать их обеих методу посетителя
   function traverseNode(node, parent) {
 
-    // We start by testing for the existence of a method on the visitor with a
-    // matching `type`.
+    // Начнём с проверки наличия метода для типа `type`
     let methods = visitor[node.type];
 
-    // If there is an `enter` method for this node type we'll call it with the
-    // `node` and its `parent`.
+    // Если есть метод `enter` для ноды такого типа то вызываем его передавая
+    // и ноду, и её родителя
     if (methods && methods.enter) {
       methods.enter(node, parent);
     }
 
-    // Next we are going to split things up by the current node type.
+    // Для разных типов нод - разные действия
     switch (node.type) {
 
-      // We'll start with our top level `Program`. Since Program nodes have a
-      // property named body that has an array of nodes, we will call
-      // `traverseArray` to traverse down into them.
+      // Начнём из ноды в корне - ноды `Program`. Так как Program имеет параметр
+      // `body` который содержит массив нод - вызовем `traverseArray` чтобы 
+      // пройтись по ним
       //
-      // (Remember that `traverseArray` will in turn call `traverseNode` so  we
-      // are causing the tree to be traversed recursively)
+      // (Помните что `traverseArray` в свою очередь вызовет `traverseNode`, таким
+      // образом мы запускаем рекурсивную обработку дерева)
       case 'Program':
         traverseArray(node.body, node);
         break;
 
-      // Next we do the same with `CallExpression` and traverse their `params`.
+      // Далее сделаем то же самое с `CallExpression` and обойдём её `params`.
       case 'CallExpression':
         traverseArray(node.params, node);
         break;
 
-      // In the cases of `NumberLiteral` and `StringLiteral` we don't have any
-      // child nodes to visit, so we'll just break.
+      // В случае с `NumberLiteral` и `StringLiteral` у нас нет вложенных нод,
+      // так что мы просто пропускаем их
       case 'NumberLiteral':
       case 'StringLiteral':
         break;
 
-      // And again, if we haven't recognized the node type then we'll throw an
-      // error.
+      // И снова, если неопознанный тип - бросаем ошибку
       default:
         throw new TypeError(node.type);
     }
 
-    // If there is an `exit` method for this node type we'll call it with the
-    // `node` and its `parent`.
+    // Если для ноды этого типа есть метод `exit` - вызываем его передавая
+    // ноду и её родителя
     if (methods && methods.exit) {
       methods.exit(node, parent);
     }
   }
 
-  // Finally we kickstart the traverser by calling `traverseNode` with our ast
-  // with no `parent` because the top level of the AST doesn't have a parent.
+  // В конечном итоге мы запускаем обход дерева вызовом `traverseNode` 
+  // передавая наш AST без родительской ноды, потому что у корня AST
+  // нет родителя
   traverseNode(ast, null);
 }
 
 /**
  * ============================================================================
  *                                   ⁽(◍˃̵͈̑ᴗ˂̵͈̑)⁽
- *                              THE TRANSFORMER!!!
+ *                                 ТРАНСФОРМЕР!!!
  * ============================================================================
  */
 
 /**
- * Next up, the transformer. Our transformer is going to take the AST that we
- * have built and pass it to our traverser function with a visitor and will
- * create a new ast.
+ * Следующий шаг - трансформация. Наш трансформер возьмёт построенный нами AST,
+ * и передаст его в обходчик вместе с посетителем (`visitor`) для построения нового AST
  *
  * ----------------------------------------------------------------------------
  *   Original AST                     |   Transformed AST
@@ -847,41 +850,39 @@ function traverser(ast, visitor) {
  *                                    |             type: 'NumberLiteral',
  *                                    |             value: '2'
  *                                    |           }]
- *  (sorry the other one is longer.)  |         }
+ *  (извините, второе дерево длиннее) |         }
  *                                    |       }
  *                                    |     }]
  *                                    |   }
  * ----------------------------------------------------------------------------
  */
 
-// So we have our transformer function which will accept the lisp ast.
+// Итак, у нас есть функция `transformer` которая принимает LISP AST
 function transformer(ast) {
 
-  // We'll create a `newAst` which like our previous AST will have a program
-  // node.
+  // Создадим `newAst` (новый AST) который как и предыдущий будет иметь 
+  // ноду `Program` в корне
   let newAst = {
     type: 'Program',
     body: [],
   };
 
-  // Next I'm going to cheat a little and create a bit of a hack. We're going to
-  // use a property named `context` on our parent nodes that we're going to push
-  // nodes to their parent's `context`. Normally you would have a better
-  // abstraction than this, but for our purposes this keeps things simple.
+  // Далее я собираюсь немного схитрить и чуть-чуть считерить.
+  // Мы будем использовать свойство которое `context` родительской ноды чтобы
+  // складывать ноды в `context` их родителя. Обычно у вас будет абстракция
+  // получше этой, но для наших целей нам нужно оставить всё простым
   //
-  // Just take note that the context is a reference *from* the old ast *to* the
-  // new ast.
+  // Просто запомните что `context` это ссылка *с* старого AST *к* новому
   ast._context = newAst.body;
 
-  // We'll start by calling the traverser function with our ast and a visitor.
+  // Начнём с вызова функции обхода с нашим AST и посетителем
   traverser(ast, {
 
-    // The first visitor method accepts any `NumberLiteral`
+    // Первый метод посетителя принимает любой `NumberLiteral`
     NumberLiteral: {
-      // We'll visit them on enter.
       enter(node, parent) {
-        // We'll create a new node also named `NumberLiteral` that we will push to
-        // the parent context.
+        // Создадим новую ноду которая тоже будет называться `NumberLiteral`, и 
+        // кинем её в родительский context
         parent._context.push({
           type: 'NumberLiteral',
           value: node.value,
@@ -889,7 +890,7 @@ function transformer(ast) {
       },
     },
 
-    // Next we have `StringLiteral`
+    // Дальше у нас `StringLiteral`
     StringLiteral: {
       enter(node, parent) {
         parent._context.push({
@@ -899,11 +900,11 @@ function transformer(ast) {
       },
     },
 
-    // Next up, `CallExpression`.
+    // Потом `CallExpression`.
     CallExpression: {
       enter(node, parent) {
 
-        // We start creating a new node `CallExpression` with a nested
+        // Начинаем из создания новой ноды `CallExpression` с вложенным
         // `Identifier`.
         let expression = {
           type: 'CallExpression',
@@ -914,73 +915,70 @@ function transformer(ast) {
           arguments: [],
         };
 
-        // Next we're going to define a new context on the original
-        // `CallExpression` node that will reference the `expression`'s arguments
-        // so that we can push arguments.
+        // Дальше мы обьявим новое поле `context` на ноде `CallExpression`.
+        // Это поле будет содержать аргументы вызова.
         node._context = expression.arguments;
 
-        // Then we're going to check if the parent node is a `CallExpression`.
-        // If it is not...
+        // Теперь надо проверить `CallExpression` ли родительская нода.
+        // Если нет...
         if (parent.type !== 'CallExpression') {
 
-          // We're going to wrap our `CallExpression` node with an
-          // `ExpressionStatement`. We do this because the top level
-          // `CallExpression` in JavaScript are actually statements.
+          // Мы завернём нашу ноду `CallExpression` в ноду
+          // `ExpressionStatement`. Мы делаем это потому что высший уроверь JavaScript
+          // `CallExpression` это, фактически, выражения.
           expression = {
             type: 'ExpressionStatement',
             expression: expression,
           };
         }
 
-        // Last, we push our (possibly wrapped) `CallExpression` to the `parent`'s
+        // В конце мы закидываем наш (возможно обёрнут) `CallExpression` в родительский
         // `context`.
         parent._context.push(expression);
       },
     }
   });
 
-  // At the end of our transformer function we'll return the new ast that we
-  // just created.
+  // В конце нашей функции-трансформера просто возвращаем новое дерево
   return newAst;
 }
 
 /**
  * ============================================================================
  *                               ヾ（〃＾∇＾）ﾉ♪
- *                            THE CODE GENERATOR!!!!
+ *                           ГЕНЕРАТОР КОДА!!!!
  * ============================================================================
  */
 
 /**
- * Now let's move onto our last phase: The Code Generator.
+ * Теперь приступим к последнему этапу - генерация кода.
  *
- * Our code generator is going to recursively call itself to print each node in
- * the tree into one giant string.
+ * Наш генератор кода будет рекурсивно вызывать себ чтобы напечатаь каждую ноду
+ * нашего дерева в один большой текст
  */
 
 function codeGenerator(node) {
 
-  // We'll break things down by the `type` of the `node`.
+  // Разделим ноды по их типу
   switch (node.type) {
 
-    // If we have a `Program` node. We will map through each node in the `body`
-    // and run them through the code generator and join them with a newline.
+    // Если это нода `Program` - проходимся по всем нодам в поле `body`,
+    // пропускаем их через генератор кода и соединяем все с \n (символ новой строки)
     case 'Program':
       return node.body.map(codeGenerator)
         .join('\n');
 
-    // For `ExpressionStatement` we'll call the code generator on the nested
-    // expression and we'll add a semicolon...
+    // Для `ExpressionStatement` мы запустим генератор для вложенных выражений,
+    // и добавим точку с запятой...
     case 'ExpressionStatement':
       return (
         codeGenerator(node.expression) +
-        ';' // << (...because we like to code the *correct* way)
+        ';' // << (...потому что мы любим *правильный* способ писать код)
       );
 
-    // For `CallExpression` we will print the `callee`, add an open
-    // parenthesis, we'll map through each node in the `arguments` array and run
-    // them through the code generator, joining them with a comma, and then
-    // we'll add a closing parenthesis.
+    // Для `CallExpression` мы вернём `callee`, откроем скобку, пройдёмся по массиву
+    // всех аргументов, прогоним их через генератор, соеденим результаты запятой,
+    // и закроем скобку.
     case 'CallExpression':
       return (
         codeGenerator(node.callee) +
@@ -990,19 +988,19 @@ function codeGenerator(node) {
         ')'
       );
 
-    // For `Identifier` we'll just return the `node`'s name.
+    // Для `Identifier` просто возвращаем имя ноды
     case 'Identifier':
       return node.name;
 
-    // For `NumberLiteral` we'll just return the `node`'s value.
+    // Для `NumberLiteral` просто возвращаем значение ноды
     case 'NumberLiteral':
       return node.value;
 
-    // For `StringLiteral` we'll add quotations around the `node`'s value.
+    // Для `StringLiteral` добавим двойные скобки вокруг значения ноды
     case 'StringLiteral':
       return '"' + node.value + '"';
 
-    // And if we haven't recognized the node, we'll throw an error.
+    // И как всегда, если не распознали тип - ошибка.
     default:
       throw new TypeError(node.type);
   }
@@ -1011,13 +1009,13 @@ function codeGenerator(node) {
 /**
  * ============================================================================
  *                                  (۶* ‘ヮ’)۶”
- *                         !!!!!!!!THE COMPILER!!!!!!!!
+ *                          !!!!!!!!КОМПИЛЯТОР!!!!!!!!
  * ============================================================================
  */
 
 /**
- * FINALLY! We'll create our `compiler` function. Here we will link together
- * every part of the pipeline.
+ * НАКОНЕЦ-ТО! Осталось только создать нашу `compiler` функцию. 
+ * В ней мы просто соберём всё в одну цепочку
  *
  *   1. input  => tokenizer   => tokens
  *   2. tokens => parser      => ast
@@ -1031,18 +1029,18 @@ function compiler(input) {
   let newAst = transformer(ast);
   let output = codeGenerator(newAst);
 
-  // and simply return the output!
+  // и просто вернём вывод!
   return output;
 }
 
 /**
  * ============================================================================
  *                                   (๑˃̵ᴗ˂̵)و
- * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!YOU MADE IT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ * !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!ВЫ СДЕЛАЛИ ЭТО!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
  * ============================================================================
  */
 
-// Now I'm just exporting everything...
+// Просто всё экспортируем...
 module.exports = {
   tokenizer,
   parser,
