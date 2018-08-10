@@ -1,6 +1,6 @@
 [![The Super Tiny Compiler](https://raw.githubusercontent.com/VladReshet/the-super-tiny-compiler-rus/master/logo.png)](the-super-tiny-compiler.js)
 
-***Добро пожаловать на страницу The Super Tiny Compiler! (Супер Маленький Компилятор)***
+***Добро пожаловать на страницу The Super Tiny Compiler! (Супер Маленького Компилятора)***
 
 Это ультра-упрощённый пример устройства всех основных частей современного компилятора,
 написанный на простом JavaScript.
