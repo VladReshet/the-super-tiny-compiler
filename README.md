@@ -1,47 +1,44 @@
-[![The Super Tiny Compiler](https://cloud.githubusercontent.com/assets/952783/21579290/5755288a-cf75-11e6-90e0-029529a44a38.png)](the-super-tiny-compiler.js)
+[![The Super Tiny Compiler](https://raw.githubusercontent.com/VladReshet/the-super-tiny-compiler-rus/master/logo.png)](the-super-tiny-compiler.js)
 
-***Welcome to The Super Tiny Compiler!***
+***Добро пожаловать на страницу The Super Tiny Compiler! (Супер Маленький Компилятор)***
 
-This is an ultra-simplified example of all the major pieces of a modern compiler
-written in easy to read JavaScript.
+Это ультра-упрощённый пример устройства всех основных частей современного компилятора,
+написанный на простом JavaScript.
 
-Reading through the guided code will help you learn about how *most* compilers
-work from end to end.
+Чтение кода поможет вам изучить то как *большинство* компиляторов работают от начала до конца.
 
-### [Want to jump into the code? Click here](the-super-tiny-compiler.js)
+### [Хотите сразу перейти к коду? Нажмите сюда](the-super-tiny-compiler.js)
 
-### [You can also check it out on Glitch](https://the-super-tiny-compiler.glitch.me/)
+### [Так же можете посмотреть его на Glitch (без перевода)](https://the-super-tiny-compiler.glitch.me/)
 
 ---
 
-### Why should I care?
+### Почему меня оно вообще должно интересовать?
 
-That's fair, most people don't really have to think about compilers in their day
-jobs. However, compilers are all around you, tons of the tools you use are based
-on concepts borrowed from compilers.
+Действительно, большинству людей не нужно размышлять о компиляции на их работе.
+Но, тем не менее, вокруг вас есть много компиляторов, и множество инструментов
+которые вы используете построены на принципах взятых из компиляторов.
 
-### But compilers are scary!
+### Но компиляторы такие страшные!
 
-Yes, they are. But that's our fault (the people who write compilers), we've
-taken something that is reasonably straightforward and made it so scary that
-most think of it as this totally unapproachable thing that only the nerdiest of
-the nerds are able to understand.
+Да, они такие. Но это наша же вина (вина людей, кто пишет компиляторы), мы берём
+нечто что может работать довольно просто, и делаем его таким страшным что большинство
+считает его абсолютно неприступным, и понятным только для ботанов.
 
-### Okay so where do I begin?
+### Окей, а с чего мы начнём?
 
-Awesome! Head on over to the [the-super-tiny-compiler.js](the-super-tiny-compiler.js)
-file.
+Отлично! Открывайте файл [the-super-tiny-compiler.js](the-super-tiny-compiler.js).
 
-### I'm back, that didn't make sense
+### Я возвращаюсь, это было бессмысленно
 
-Ouch, I'm really sorry. I'm planning on doing a lot more work on this to add
-inline annotations. If you want to come back when that's done, you can either
-watch/star this repo or follow me on
-[twitter](https://twitter.com/thejameskyle) for updates.
+Уупс, я очень извиняюсь. Я планирую поработать над проектом больше, чтобы добавить
+инлайновые аннотации. Если вы хотите прийти позже, когда всё будет готово, вы можете
+подписаться/поставить звезду этому репозиторию, или следить за мной (за оригинальным автором. прим. переводчика) в твиттере
+[twitter](https://twitter.com/thejameskyle)
 
-### Tests
+### Тесты
 
-Run with `node test.js`
+Запускаются с помощью `node test.js`
 
 ---
 
