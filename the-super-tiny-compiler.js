@@ -924,7 +924,7 @@ function transformer(ast) {
         if (parent.type !== 'CallExpression') {
 
           // Мы завернём нашу ноду `CallExpression` в ноду
-          // `ExpressionStatement`. Мы делаем это потому что высший уроверь JavaScript
+          // `ExpressionStatement`. Мы делаем это потому что высший уровень JavaScript
           // `CallExpression` это, фактически, выражения.
           expression = {
             type: 'ExpressionStatement',
